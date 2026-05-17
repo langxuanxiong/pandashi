@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import Link from "next/link";
+import { UserRound } from "lucide-react";
 import { AppDock } from "@/components/AppDock";
 import "@/app/globals.css";
 
@@ -14,8 +16,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <div className="shell">
           <header className="app-header">
             <div className="brand">
-              <h1>盘小编</h1>
-              <p>AI 市场小编</p>
+              <div>
+                <h1>盘小编</h1>
+                <p>AI 市场小编</p>
+              </div>
+              <Link className="account-link" href="/account" aria-label="我的">
+                <UserRound size={18} />
+              </Link>
             </div>
           </header>
           <main className="main">

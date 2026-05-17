@@ -68,7 +68,7 @@ button:disabled {
 
 .brand {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: 16px;
   max-width: 880px;
@@ -84,10 +84,44 @@ button:disabled {
 }
 
 .brand p {
-  margin: 0;
+  margin: 4px 0 0;
   color: var(--muted);
   font-size: 13px;
   white-space: nowrap;
+}
+
+.account-link {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 auto;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--paper);
+  color: var(--soft);
+}
+
+.account-link:hover {
+  border-color: rgba(223, 189, 111, 0.56);
+  color: var(--accent);
+}
+
+.back-link {
+  display: inline-grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  margin: 4px 0 16px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--paper);
+  color: var(--soft);
+}
+
+.back-link:hover {
+  border-color: rgba(223, 189, 111, 0.56);
+  color: var(--accent);
 }
 
 .main {
@@ -314,6 +348,104 @@ button:disabled {
   line-height: 1.08;
 }
 
+.account-hero,
+.settings-row,
+.roadmap-note {
+  border: 1px solid var(--line-soft);
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.025), transparent 130px),
+    var(--paper);
+}
+
+.account-hero {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  box-shadow: var(--shadow);
+}
+
+.account-hero h3,
+.settings-row h3,
+.roadmap-note h3 {
+  margin: 2px 0 6px;
+  line-height: 1.24;
+}
+
+.account-hero p,
+.settings-row p,
+.roadmap-note p {
+  margin: 0;
+}
+
+.avatar-mark {
+  display: grid;
+  place-items: center;
+  width: 60px;
+  height: 60px;
+  flex: 0 0 auto;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--paper-2);
+  color: var(--accent);
+}
+
+.settings-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px;
+}
+
+.settings-row > svg {
+  flex: 0 0 auto;
+  color: var(--accent);
+}
+
+.stat-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 64px;
+  min-height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--accent);
+  font-family: Arial, "PingFang SC", sans-serif;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.roadmap-note {
+  margin-top: 16px;
+  padding: 18px;
+  color: var(--soft);
+}
+
+.logout-panel {
+  display: grid;
+  gap: 10px;
+  margin-top: 16px;
+  padding: 18px;
+  border: 1px solid var(--line-soft);
+  border-radius: 8px;
+  background: var(--paper);
+}
+
+.logout-panel form {
+  margin: 0;
+  justify-self: start;
+}
+
 .eyebrow,
 .tag {
   color: var(--accent);
@@ -461,6 +593,12 @@ button:disabled {
   color: var(--red);
   width: 40px;
   padding: 0;
+}
+
+.btn.danger-text {
+  width: auto;
+  color: var(--red);
+  justify-self: start;
 }
 
 .input,
@@ -611,10 +749,68 @@ button:disabled {
   gap: 8px;
 }
 
-.mood-button {
+.mood-button,
+.reminder-button {
   min-width: 0;
   padding: 0 8px;
   color: var(--soft);
+}
+
+.mood-button.active,
+.reminder-button.active {
+  border-color: var(--accent);
+  background: rgba(223, 189, 111, 0.16);
+  color: var(--accent);
+}
+
+.diary-textarea {
+  margin-top: 12px;
+}
+
+.reminder-grid {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.reminder-button {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  min-height: 42px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--paper-2);
+  cursor: pointer;
+  text-align: left;
+}
+
+.after-close-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line-soft);
+}
+
+.today-record-card {
+  display: grid;
+  gap: 10px;
+  margin-top: 18px;
+  padding: 16px;
+  border: 1px solid var(--line-soft);
+  border-radius: 8px;
+  background: var(--paper-2);
+}
+
+.today-record-card h3,
+.today-record-card p {
+  margin: 0;
+}
+
+.today-record-card svg {
+  color: var(--accent);
 }
 
 .disclaimer {
