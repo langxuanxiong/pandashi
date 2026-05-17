@@ -15,7 +15,7 @@ export function ChatClient() {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: "assistant",
-      content: "我是盘大师的小编。你可以问我日报、自选股、公告和市场情绪，我不会替你做买卖决定。"
+      content: "我是盘小编。你可以问我日报、自选股、公告和市场情绪，我不会替你做买卖决定。"
     }
   ]);
   const [loading, setLoading] = useState(false);
@@ -40,8 +40,8 @@ export function ChatClient() {
   }
 
   return (
-    <div className="grid two">
-      <section className="panel chat-log">
+    <div className="chat-layout">
+      <section className="chat-log" aria-live="polite">
         {messages.map((message, index) => (
           <div className={`message ${message.role}`} key={`${message.role}-${index}`}>
             <div className="tag">{message.role === "user" ? "你" : "小编"}</div>
@@ -51,16 +51,17 @@ export function ChatClient() {
         {loading ? <p className="muted">小编正在整理信息...</p> : null}
       </section>
 
-      <form className="panel" onSubmit={submit}>
-        <h3>追问小编</h3>
-        <p className="muted">可以问市场、日报、自选股和情绪复盘。</p>
-        <textarea className="textarea" value={question} onChange={(event) => setQuestion(event.target.value)} />
-        <div style={{ marginTop: 14 }}>
-          <button className="btn primary" type="submit">
-            <Send size={18} />
-            发送
-          </button>
-        </div>
+      <form className="chat-compose" onSubmit={submit}>
+        <textarea
+          className="textarea chat-input"
+          rows={1}
+          value={question}
+          onChange={(event) => setQuestion(event.target.value)}
+          placeholder="追问日报、公告或自选股"
+        />
+        <button className="send-button" aria-label="发送" type="submit">
+          <Send size={18} />
+        </button>
       </form>
     </div>
   );

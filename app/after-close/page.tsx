@@ -12,7 +12,7 @@ export default function AfterClosePage() {
         </div>
       </div>
 
-      <section className="panel">
+      <section className="diary-panel">
         <div className="section">
           <h3>今晚先把生活还给自己</h3>
           <p>
@@ -21,9 +21,9 @@ export default function AfterClosePage() {
         </div>
         <div className="section">
           <h3>情绪记录</h3>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+          <div className="mood-grid">
             {moods.map((mood) => (
-              <button className="btn" key={mood} type="button">
+              <button className="mood-button" key={mood} type="button">
                 {mood}
               </button>
             ))}
@@ -40,4 +40,3 @@ export default function AfterClosePage() {
     </>
   );
 }
-

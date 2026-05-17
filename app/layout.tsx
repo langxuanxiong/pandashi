@@ -1,11 +1,10 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { BookOpen, Home, MessageCircle, Moon, Star } from "lucide-react";
+import { AppDock } from "@/components/AppDock";
 import "@/app/globals.css";
 
 export const metadata: Metadata = {
-  title: "盘大师",
-  description: "你的 AI 市场小编"
+  title: "盘小编",
+  description: "AI 市场小编"
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -13,38 +12,18 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="zh-CN">
       <body>
         <div className="shell">
-          <aside className="sidebar">
+          <header className="app-header">
             <div className="brand">
-              <h1>盘大师</h1>
-              <p>你的 AI 市场小编</p>
+              <h1>盘小编</h1>
+              <p>AI 市场小编</p>
             </div>
-            <nav className="nav">
-              <Link href="/">
-                <Home size={18} />
-                <span>今日</span>
-              </Link>
-              <Link href="/watchlist">
-                <Star size={18} />
-                <span>自选</span>
-              </Link>
-              <Link href="/reports">
-                <BookOpen size={18} />
-                <span>日报</span>
-              </Link>
-              <Link href="/chat">
-                <MessageCircle size={18} />
-                <span>小编</span>
-              </Link>
-              <Link href="/after-close">
-                <Moon size={18} />
-                <span>收盘以后</span>
-              </Link>
-            </nav>
-          </aside>
-          <main className="main">{children}</main>
+          </header>
+          <main className="main">
+            <div className="paper">{children}</div>
+          </main>
+          <AppDock />
         </div>
       </body>
     </html>
   );
 }
-

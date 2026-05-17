@@ -74,8 +74,8 @@ export function WatchlistClient() {
   }
 
   return (
-    <div className="grid two">
-      <form className="panel" onSubmit={submit}>
+    <div className="watchlist-layout">
+      <form className="panel index-panel" onSubmit={submit}>
         <h3>添加自选股</h3>
         <p className="muted">先用本地股票库支持常见 A 股，后续再接真实数据源。</p>
         <input
@@ -103,7 +103,7 @@ export function WatchlistClient() {
         <p className="muted">也支持批量粘贴已收录的股票代码或名称。</p>
         <textarea className="textarea" value={input} onChange={(event) => setInput(event.target.value)} />
         {error ? <p className="error-text">{error}</p> : null}
-        <div style={{ marginTop: 14 }}>
+        <div className="form-actions">
           <button className="btn primary" type="submit">
             <Plus size={18} />
             添加
@@ -111,7 +111,7 @@ export function WatchlistClient() {
         </div>
       </form>
 
-      <section className="panel">
+      <section className="panel watchlist-panel">
         <h3>自选池</h3>
         {loading ? <p className="muted">正在读取自选股...</p> : null}
         {!loading && items.length === 0 ? <p className="muted">还没有自选股。先添加几只你关注的股票。</p> : null}
@@ -126,7 +126,10 @@ export function WatchlistClient() {
                   <Trash2 size={16} />
                 </button>
               </div>
-              <div className="tag">{item.sector}</div>
+              <div className="stock-meta">
+                <span>{item.market}</span>
+                <span>{item.sector}</span>
+              </div>
               <p className="muted">小编关注：近期重点关注板块情绪、公告变化和资金偏好的切换。</p>
               <a className="tag" href={`/chat?question=${encodeURIComponent(`${item.name}今天怎么了？`)}`}>
                 向小编询问这只股票

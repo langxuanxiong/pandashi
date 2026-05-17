@@ -20,7 +20,7 @@ export default async function ReportDetailPage({ params }: { params: Promise<{ d
           <h2>{formatChinaDate(report.report_date)}</h2>
           <p className="muted">这一日的市场小编记录</p>
         </div>
-        <Link className="btn" href="/reports">
+        <Link className="btn" href="/">
           返回日报
         </Link>
       </div>

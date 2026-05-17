@@ -3,8 +3,8 @@ import { formatChinaDate } from "@/lib/date";
 
 export function ReportView({ report }: { report: DailyReport }) {
   return (
-    <article className="panel">
-      <div className="section">
+    <article className="report-paper">
+      <div className="report-masthead">
         <div className="weather">
           <div className="weather-icon">{report.market_weather.emoji}</div>
           <div>
@@ -15,7 +15,7 @@ export function ReportView({ report }: { report: DailyReport }) {
         </div>
       </div>
 
-      <div className="section">
+      <div className="section lead-section">
         <p className="brief">{report.editor_brief}</p>
         <p className="muted">当前版本优先验证产品体验，内容可能来自演示数据和公开信息整理。</p>
       </div>
@@ -32,7 +32,7 @@ export function ReportView({ report }: { report: DailyReport }) {
 
       <div className="section">
         <h3>我的自选股重点</h3>
-        <div className="list">
+        <div className="list stock-digest">
           {report.watchlist_updates.map((item) => (
             <div className="stock-row" key={item.code}>
               <div className="row-head">
@@ -50,7 +50,7 @@ export function ReportView({ report }: { report: DailyReport }) {
 
       <div className="section">
         <h3>风险提醒</h3>
-        <div className="list">
+        <div className="list note-list">
           {report.risk_notes.map((note) => (
             <p key={note}>{note}</p>
           ))}
