@@ -227,6 +227,43 @@ input {
   line-height: 1.7;
 }
 
+.manual-generate {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.error-text {
+  color: var(--red);
+  margin: 10px 0 0;
+}
+
+.search-results {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0 16px;
+}
+
+.search-result {
+  display: grid;
+  gap: 4px;
+  width: 100%;
+  text-align: left;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel-soft);
+  color: var(--text);
+  padding: 12px;
+  cursor: pointer;
+}
+
+.search-result span {
+  color: var(--muted);
+  font-size: 13px;
+}
+
 .chat-log {
   min-height: 360px;
 }
@@ -274,4 +311,3 @@ input {
     grid-template-columns: 1fr;
   }
 }
-

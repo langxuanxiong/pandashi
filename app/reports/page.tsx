@@ -22,7 +22,7 @@ export default async function ReportsPage() {
         {reports.length === 0 ? <p className="muted">还没有历史日报。首页会自动生成一份本地演示日报。</p> : null}
         <div className="list">
           {reports.map((report) => (
-            <Link className="report-row" href="/" key={report.id}>
+            <Link className="report-row" href={`/reports/${report.report_date}`} key={report.id}>
               <div className="row-head">
                 <strong>{formatChinaDate(report.report_date)}</strong>
                 <span className="tag">

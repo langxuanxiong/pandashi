@@ -1,7 +1,12 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { generateDailyReport } from "@/lib/services/reportGenerator";
 import { dailyReportSchema } from "@/lib/validators";
 
 describe("daily report schema", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
   it("validates the V0.1 report contract", () => {
     const parsed = dailyReportSchema.parse({
       date: "2026-05-15",
@@ -17,5 +22,18 @@ describe("daily report schema", () => {
 
     expect(parsed.market_weather.label).toBe("震荡观望");
   });
-});
 
+  it("generates a complete mock report when no model provider is configured", async () => {
+    vi.stubEnv("DEEPSEEK_API_KEY", "");
+    vi.stubEnv("DASHSCOPE_API_KEY", "");
+
+    const report = await generateDailyReport(
+      [{ id: "1", user_id: "u1", code: "600519.SH", name: "贵州茅台", market: "SH", sector: "白酒 / 消费", created_at: "2026-05-15T00:00:00.000Z" }],
+      "2026-05-15"
+    );
+
+    expect(report.watchlist_updates[0].name).toBe("贵州茅台");
+    expect(report.what_happened).toContain("演示数据");
+    expect(dailyReportSchema.parse(report).date).toBe("2026-05-15");
+  });
+});

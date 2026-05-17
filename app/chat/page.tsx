@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { ChatClient } from "@/app/chat/ChatClient";
 import { Disclaimer } from "@/components/Disclaimer";
 
@@ -10,9 +11,10 @@ export default function ChatPage() {
           <p className="muted">追问日报、公告和自选股变化</p>
         </div>
       </div>
-      <ChatClient />
+      <Suspense fallback={<div className="panel muted">小编正在准备...</div>}>
+        <ChatClient />
+      </Suspense>
       <Disclaimer />
     </>
   );
 }
-

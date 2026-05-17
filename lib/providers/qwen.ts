@@ -1,11 +1,7 @@
 import { hasQwenConfig } from "@/lib/config";
+import type { LLMMessage } from "@/lib/providers/types";
 
-type QwenMessage = {
-  role: "system" | "user" | "assistant";
-  content: string;
-};
-
-export async function callQwen(messages: QwenMessage[]) {
+export async function callQwen(messages: LLMMessage[]) {
   if (!hasQwenConfig()) return null;
 
   const response = await fetch("https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions", {
@@ -29,4 +25,3 @@ export async function callQwen(messages: QwenMessage[]) {
   const data = await response.json();
   return data.choices?.[0]?.message?.content as string | undefined;
 }
-

@@ -1,20 +1,15 @@
 import { DEFAULT_USER_ID } from "@/lib/config";
 import { getChinaDate, isTradingDay } from "@/lib/date";
-import { generateDailyReport } from "@/lib/services/reportGenerator";
-import { getReportByDate, listReports, listWatchlist, saveReport } from "@/lib/services/repository";
+import { getReportByDate, listReports } from "@/lib/services/repository";
 import { Disclaimer } from "@/components/Disclaimer";
+import { GenerateReportButton } from "@/components/GenerateReportButton";
 import { ReportView } from "@/components/ReportView";
 
 export const dynamic = "force-dynamic";
 
 export default async function TodayPage() {
   const today = getChinaDate();
-  let report = await getReportByDate(DEFAULT_USER_ID, today);
-
-  if (!report && isTradingDay(today)) {
-    const watchlist = await listWatchlist(DEFAULT_USER_ID);
-    report = await saveReport(DEFAULT_USER_ID, await generateDailyReport(watchlist, today));
-  }
+  const report = await getReportByDate(DEFAULT_USER_ID, today);
 
   const latest = report ? null : (await listReports(DEFAULT_USER_ID, 1))[0];
 
@@ -35,6 +30,7 @@ export default async function TodayPage() {
           <p className="muted">
             {isTradingDay(today) ? "收盘后会为你生成今日日报。" : "可以回顾一下最近的市场故事。"}
           </p>
+          <GenerateReportButton />
         </div>
       )}
 

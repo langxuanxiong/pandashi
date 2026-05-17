@@ -1,4 +1,4 @@
-import { callQwen } from "@/lib/providers/qwen";
+import { callLLM } from "@/lib/providers/llm";
 import { asksForInvestmentAdvice, safeAlternative, sanitizeInvestmentLanguage } from "@/lib/safety";
 import type { DailyReportRow, WatchlistItem } from "@/lib/types";
 
@@ -15,7 +15,7 @@ export async function answerEditorQuestion({
     return safeAlternative();
   }
 
-  const qwenContent = await callQwen([
+  const llmContent = await callLLM([
     {
       role: "system",
       content:
@@ -27,7 +27,7 @@ export async function answerEditorQuestion({
     }
   ]);
 
-  if (qwenContent) return sanitizeInvestmentLanguage(qwenContent);
+  if (llmContent) return sanitizeInvestmentLanguage(llmContent);
 
   const stock = watchlist.find((item) => question.includes(item.name) || question.includes(item.code.slice(0, 6)));
   if (stock) {
@@ -40,4 +40,3 @@ export async function answerEditorQuestion({
 
   return "小编现在还没有拿到今日日报。你可以先添加自选股，或手动生成一份收盘日报，我再帮你继续追问。";
 }
-

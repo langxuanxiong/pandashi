@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Send } from "lucide-react";
 
 type Message = {
@@ -9,7 +10,8 @@ type Message = {
 };
 
 export function ChatClient() {
-  const [question, setQuestion] = useState("宁德时代今天怎么了？");
+  const searchParams = useSearchParams();
+  const [question, setQuestion] = useState(searchParams.get("question") ?? "宁德时代今天怎么了？");
   const [messages, setMessages] = useState<Message[]>([
     {
       role: "assistant",
@@ -63,4 +65,3 @@ export function ChatClient() {
     </div>
   );
 }
-

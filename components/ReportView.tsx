@@ -17,6 +17,7 @@ export function ReportView({ report }: { report: DailyReport }) {
 
       <div className="section">
         <p className="brief">{report.editor_brief}</p>
+        <p className="muted">当前版本优先验证产品体验，内容可能来自演示数据和公开信息整理。</p>
       </div>
 
       <div className="section">
@@ -76,4 +77,3 @@ export function ReportView({ report }: { report: DailyReport }) {
     </article>
   );
 }
-

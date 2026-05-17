@@ -1,6 +1,6 @@
 import { getChinaDate } from "@/lib/date";
 import { PublicMockMarketDataProvider, PublicMockNewsProvider } from "@/lib/providers/marketData";
-import { callQwen } from "@/lib/providers/qwen";
+import { callLLM } from "@/lib/providers/llm";
 import { containsUnsafeInvestmentAdvice, sanitizeInvestmentLanguage } from "@/lib/safety";
 import { dailyReportSchema } from "@/lib/validators";
 import type { DailyReport, MarketEvent, WatchlistItem } from "@/lib/types";
@@ -15,18 +15,21 @@ export async function extractEvents(watchlist: WatchlistItem[], date = getChinaD
     newsProvider.getStockNews(watchlist)
   ]);
 
-  const qwenContent = await callQwen([
+  const llmContent = await callLLM([
     { role: "system", content: systemPrompt },
     {
       role: "user",
       content: `请把以下市场信息提取为 JSON，键名为 events。市场：${JSON.stringify(market)} 自选股新闻：${JSON.stringify(stockNews)}`
     }
-  ]);
+  ], { json: true });
 
-  if (qwenContent) {
+  if (llmContent) {
     try {
-      const parsed = JSON.parse(qwenContent) as { events?: MarketEvent[] };
-      if (Array.isArray(parsed.events)) return parsed.events;
+      const parsed = JSON.parse(llmContent) as { events?: Partial<MarketEvent>[] };
+      const events = Array.isArray(parsed.events)
+        ? parsed.events.map(sanitizeEvent).filter((event): event is MarketEvent => Boolean(event))
+        : [];
+      if (events.length > 0) return events;
     } catch {
       // Fall back to deterministic events below.
     }
@@ -60,17 +63,17 @@ export async function extractEvents(watchlist: WatchlistItem[], date = getChinaD
 
 export async function generateDailyReport(watchlist: WatchlistItem[], date = getChinaDate()): Promise<DailyReport> {
   const events = await extractEvents(watchlist, date);
-  const qwenContent = await callQwen([
+  const llmContent = await callLLM([
     { role: "system", content: systemPrompt },
     {
       role: "user",
       content: `请根据以下事件和自选股生成 A 股市场小编日报 JSON。必须包含 date, market_weather, editor_brief, what_happened, daily_story, watchlist_updates, risk_notes, closing_letter, source_urls。不要荐股，不要预测涨跌，不要买卖建议。日期：${date}。自选股：${JSON.stringify(watchlist)}。事件：${JSON.stringify(events)}`
     }
-  ]);
+  ], { json: true });
 
-  if (qwenContent) {
+  if (llmContent) {
     try {
-      const parsed = dailyReportSchema.parse(JSON.parse(qwenContent));
+      const parsed = sanitizeReportShape(JSON.parse(llmContent), date);
       return sanitizeReport(parsed);
     } catch {
       // Fall back to deterministic report below.
@@ -86,7 +89,7 @@ export async function generateDailyReport(watchlist: WatchlistItem[], date = get
     },
     editor_brief: "今天市场更像是在试探方向，而不是给出一个很明确的答案。",
     what_happened:
-      "A 股整体偏震荡，消费、新能源和金融方向都有资金关注，但持续性仍需要观察。今天更适合先理解信息，而不是急着下结论。",
+      "A 股整体偏震荡，消费、新能源和金融方向都有资金关注，但持续性仍需要观察。当前为演示数据与公开信息整理，更适合先验证阅读体验，而不是急着下结论。",
     daily_story: {
       title: "资金还在寻找新的确定性",
       body:
@@ -102,7 +105,33 @@ export async function generateDailyReport(watchlist: WatchlistItem[], date = get
     risk_notes: ["热点切换较快，不适合只因为一天涨跌改变全部判断。", "公开信息可能存在滞后，重要事项应以交易所公告和公司公告为准。"],
     closing_letter:
       "今天市场已经收盘了。可以复盘，但不用把每一次波动都当成对自己的否定。今晚先把生活还给自己，明天再慢慢看。",
-    source_urls: Array.from(new Set(events.flatMap((event) => event.source_urls)))
+    source_urls: Array.from(new Set(events.flatMap((event) => event.source_urls).filter(Boolean)))
+  });
+}
+
+function sanitizeEvent(event: Partial<MarketEvent>): MarketEvent | null {
+  if (!event.title || !event.summary) return null;
+
+  return {
+    type: event.type ?? "market",
+    title: event.title,
+    summary: event.summary,
+    related_codes: Array.isArray(event.related_codes) ? event.related_codes.filter(Boolean) : [],
+    related_sectors: Array.isArray(event.related_sectors) ? event.related_sectors.filter(Boolean) : [],
+    importance: typeof event.importance === "number" ? event.importance : 3,
+    sentiment: event.sentiment ?? "mixed",
+    risk_note: event.risk_note,
+    source_urls: Array.isArray(event.source_urls) ? event.source_urls.filter(Boolean) : []
+  };
+}
+
+function sanitizeReportShape(report: DailyReport, fallbackDate: string): DailyReport {
+  return dailyReportSchema.parse({
+    ...report,
+    date: report.date || fallbackDate,
+    watchlist_updates: Array.isArray(report.watchlist_updates) ? report.watchlist_updates : [],
+    risk_notes: Array.isArray(report.risk_notes) ? report.risk_notes.filter(Boolean) : [],
+    source_urls: Array.isArray(report.source_urls) ? report.source_urls.filter(Boolean) : []
   });
 }
 
@@ -113,4 +142,3 @@ function sanitizeReport(report: DailyReport): DailyReport {
     : report;
   return dailyReportSchema.parse(cleaned);
 }
-

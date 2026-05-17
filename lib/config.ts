@@ -14,3 +14,6 @@ export function hasQwenConfig() {
   return Boolean(process.env.DASHSCOPE_API_KEY);
 }
 
+export function hasDeepSeekConfig() {
+  return Boolean(process.env.DEEPSEEK_API_KEY);
+}
