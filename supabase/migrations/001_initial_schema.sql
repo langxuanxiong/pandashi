@@ -1,0 +1,70 @@
+create extension if not exists pgcrypto;
+
+create table if not exists users (
+  id uuid primary key default gen_random_uuid(),
+  nickname text,
+  editor_tone text default 'calm',
+  created_at timestamp with time zone default now()
+);
+
+create table if not exists watchlist_items (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references users(id) on delete cascade,
+  code text not null,
+  name text not null,
+  market text,
+  sector text,
+  created_at timestamp with time zone default now(),
+  unique(user_id, code)
+);
+
+create table if not exists daily_reports (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references users(id) on delete cascade,
+  report_date date not null,
+  report_json jsonb not null,
+  report_markdown text,
+  status text default 'completed',
+  created_at timestamp with time zone default now(),
+  unique(user_id, report_date)
+);
+
+create table if not exists market_events (
+  id uuid primary key default gen_random_uuid(),
+  event_date date not null,
+  type text,
+  title text,
+  summary text,
+  related_codes text[],
+  related_sectors text[],
+  importance int,
+  sentiment text,
+  source_urls text[],
+  created_at timestamp with time zone default now()
+);
+
+create table if not exists chat_messages (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references users(id) on delete cascade,
+  role text not null,
+  content text not null,
+  related_report_id uuid references daily_reports(id),
+  created_at timestamp with time zone default now()
+);
+
+create table if not exists generation_jobs (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references users(id) on delete cascade,
+  job_date date not null,
+  status text not null default 'pending',
+  error_message text,
+  retry_count int not null default 0,
+  started_at timestamp with time zone,
+  finished_at timestamp with time zone,
+  created_at timestamp with time zone default now(),
+  unique(user_id, job_date)
+);
+
+insert into users (id, nickname)
+values ('00000000-0000-0000-0000-000000000001', '默认用户')
+on conflict (id) do nothing;
