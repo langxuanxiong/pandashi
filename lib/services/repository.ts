@@ -5,6 +5,8 @@ import type {
   DailyReport,
   DailyReportRow,
   GenerationJobRow,
+  MarketEvent,
+  MarketEventRow,
   WatchlistItem
 } from "@/lib/types";
 
@@ -221,6 +223,66 @@ export async function getGenerationJob(userId: string, date: string): Promise<Ge
   return memoryStore().generationJobs.find((job) => job.user_id === userId && job.job_date === date) ?? null;
 }
 
+export async function listMarketEvents(date: string): Promise<MarketEventRow[]> {
+  const supabase = getSupabaseAdmin();
+  if (supabase) {
+    const { data, error } = await supabase
+      .from("market_events")
+      .select("*")
+      .eq("event_date", date)
+      .order("importance", { ascending: false })
+      .order("created_at", { ascending: true });
+    if (error) throw error;
+    return (data ?? []).map(mapMarketEventRow);
+  }
+
+  return memoryStore()
+    .marketEvents.filter((event) => event.event_date === date)
+    .sort((a, b) => b.importance - a.importance || a.created_at.localeCompare(b.created_at));
+}
+
+export async function saveMarketEvents(date: string, events: MarketEvent[]): Promise<MarketEventRow[]> {
+  const normalized = dedupeMarketEvents(events.map(normalizeMarketEvent));
+  if (normalized.length === 0) return [];
+
+  const existing = await listMarketEvents(date);
+  const existingKeys = new Set(existing.map(marketEventKey));
+  const fresh = normalized.filter((event) => !existingKeys.has(marketEventKey(event)));
+  if (fresh.length === 0) return existing.filter((event) => normalized.some((candidate) => marketEventKey(candidate) === marketEventKey(event)));
+
+  const supabase = getSupabaseAdmin();
+  if (supabase) {
+    const { data, error } = await supabase
+      .from("market_events")
+      .insert(
+        fresh.map((event) => ({
+          event_date: date,
+          type: event.type,
+          title: event.title,
+          summary: event.summary,
+          related_codes: event.related_codes,
+          related_sectors: event.related_sectors,
+          importance: event.importance,
+          sentiment: event.sentiment,
+          source_urls: event.source_urls
+        }))
+      )
+      .select("*");
+    if (error) throw error;
+    return [...existing, ...(data ?? []).map(mapMarketEventRow)].sort((a, b) => b.importance - a.importance);
+  }
+
+  const now = new Date().toISOString();
+  const created = fresh.map((event): MarketEventRow => ({
+    ...event,
+    id: crypto.randomUUID(),
+    event_date: date,
+    created_at: now
+  }));
+  memoryStore().marketEvents.push(...created);
+  return [...existing, ...created].sort((a, b) => b.importance - a.importance);
+}
+
 export async function startGenerationJob(userId: string, date: string): Promise<GenerationJobRow> {
   const existing = await getGenerationJob(userId, date);
   const now = new Date().toISOString();
@@ -239,7 +301,7 @@ export async function startGenerationJob(userId: string, date: string): Promise<
   });
 }
 
-export async function completeGenerationJob(userId: string, date: string): Promise<GenerationJobRow> {
+export async function completeGenerationJob(userId: string, date: string, warningMessage?: string): Promise<GenerationJobRow> {
   const existing = await getGenerationJob(userId, date);
   const now = new Date().toISOString();
 
@@ -248,7 +310,7 @@ export async function completeGenerationJob(userId: string, date: string): Promi
     user_id: userId,
     job_date: date,
     status: "completed",
-    error_message: null,
+    error_message: warningMessage ? warningMessage.slice(0, 1000) : null,
     retry_count: existing?.retry_count ?? 0,
     started_at: existing?.started_at ?? now,
     finished_at: now,
@@ -304,4 +366,46 @@ async function upsertGenerationJob(job: GenerationJobRow): Promise<GenerationJob
     store.generationJobs.push(job);
   }
   return job;
+}
+
+function mapMarketEventRow(row: Record<string, unknown>): MarketEventRow {
+  return {
+    id: String(row.id),
+    event_date: String(row.event_date),
+    type: row.type === "sector" || row.type === "stock" ? row.type : "market",
+    title: String(row.title ?? ""),
+    summary: String(row.summary ?? ""),
+    related_codes: Array.isArray(row.related_codes) ? row.related_codes.filter(Boolean).map(String) : [],
+    related_sectors: Array.isArray(row.related_sectors) ? row.related_sectors.filter(Boolean).map(String) : [],
+    importance: typeof row.importance === "number" ? row.importance : 3,
+    sentiment: row.sentiment === "positive" || row.sentiment === "neutral" || row.sentiment === "negative" ? row.sentiment : "mixed",
+    source_urls: Array.isArray(row.source_urls) ? row.source_urls.filter(Boolean).map(String) : [],
+    created_at: String(row.created_at)
+  };
+}
+
+function normalizeMarketEvent(event: MarketEvent): MarketEvent {
+  return {
+    ...event,
+    title: event.title.trim(),
+    summary: event.summary.trim(),
+    related_codes: Array.from(new Set(event.related_codes.filter(Boolean))),
+    related_sectors: Array.from(new Set(event.related_sectors.filter(Boolean))),
+    importance: Math.max(1, Math.min(5, Math.round(event.importance || 3))),
+    source_urls: Array.from(new Set(event.source_urls.filter(Boolean)))
+  };
+}
+
+function dedupeMarketEvents(events: MarketEvent[]) {
+  const seen = new Set<string>();
+  return events.filter((event) => {
+    const key = marketEventKey(event);
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function marketEventKey(event: Pick<MarketEvent, "type" | "title" | "source_urls">) {
+  return [event.type, event.title.trim(), event.source_urls[0] ?? ""].join("|");
 }

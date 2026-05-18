@@ -5,9 +5,11 @@ import {
   completeGenerationJob,
   failGenerationJob,
   getGenerationJob,
+  listMarketEvents,
   listChatMessages,
   listWatchlist,
   saveChatMessage,
+  saveMarketEvents,
   saveReport,
   startGenerationJob
 } from "@/lib/services/repository";
@@ -80,5 +82,40 @@ describe("repository memory fallback", () => {
     const completed = await getGenerationJob(userId, "2026-05-18");
     expect(completed?.status).toBe("completed");
     expect(completed?.retry_count).toBe(1);
+  });
+
+  it("persists and dedupes market events in memory", async () => {
+    disableSupabase();
+
+    await saveMarketEvents("2026-05-18", [
+      {
+        type: "market",
+        title: "公开市场来源已接入",
+        summary: "上交所和深交所公开来源用于日报追溯。",
+        related_codes: [],
+        related_sectors: ["上证市场"],
+        importance: 4,
+        sentiment: "mixed",
+        risk_note: "公开信息可能有延迟。",
+        source_urls: ["https://www.sse.com.cn/"]
+      }
+    ]);
+    await saveMarketEvents("2026-05-18", [
+      {
+        type: "market",
+        title: "公开市场来源已接入",
+        summary: "重复事件不会再次入库。",
+        related_codes: [],
+        related_sectors: ["上证市场"],
+        importance: 4,
+        sentiment: "mixed",
+        risk_note: "公开信息可能有延迟。",
+        source_urls: ["https://www.sse.com.cn/"]
+      }
+    ]);
+
+    const events = await listMarketEvents("2026-05-18");
+    expect(events).toHaveLength(1);
+    expect(events[0].source_urls).toEqual(["https://www.sse.com.cn/"]);
   });
 });

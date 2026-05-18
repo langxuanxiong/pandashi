@@ -11,6 +11,7 @@ function disableSupabase() {
   vi.stubEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY", "");
   vi.stubEnv("DEEPSEEK_API_KEY", "");
   vi.stubEnv("DASHSCOPE_API_KEY", "");
+  vi.stubEnv("MARKET_DATA_PROVIDER", "mock");
 }
 
 describe("daily report generation job route", () => {
@@ -70,6 +71,27 @@ describe("daily report generation job route", () => {
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toMatchObject({ status: "completed" });
     expect((await getGenerationJob(userId, "2026-05-18"))?.status).toBe("completed");
+  });
+
+  it("records completed job warnings when public data falls back", async () => {
+    disableSupabase();
+    vi.stubEnv("MARKET_DATA_PROVIDER", "official");
+    vi.spyOn(globalThis, "fetch").mockRejectedValue(new Error("network down"));
+    vi.spyOn(console, "warn").mockImplementation(() => undefined);
+
+    const { POST } = await import("@/app/api/jobs/generate-daily-report/route");
+    const response = await POST(
+      new NextRequest("http://localhost/api/jobs/generate-daily-report", {
+        method: "POST",
+        body: JSON.stringify({ date: "2026-05-18", source: "manual-demo" })
+      })
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({ status: "completed" });
+    const job = await getGenerationJob(userId, "2026-05-18");
+    expect(job?.status).toBe("completed");
+    expect(job?.error_message).toContain("公开金融数据源不可用");
   });
 
   it("skips when a report already exists", async () => {

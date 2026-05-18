@@ -11,7 +11,7 @@ export async function callDeepSeek(messages: LLMMessage[], options?: { json?: bo
       "Content-Type": "application/json"
     },
     body: JSON.stringify({
-      model: process.env.DEEPSEEK_MODEL ?? "deepseek-chat",
+      model: process.env.DEEPSEEK_MODEL ?? "deepseek-v4-flash",
       messages,
       temperature: 0.4,
       ...(options?.json ? { response_format: { type: "json_object" } } : {})

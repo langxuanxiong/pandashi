@@ -11,7 +11,7 @@ npm run dev
 
 打开 `http://localhost:3000`。
 
-没有配置 Supabase / DeepSeek 时，应用会使用内存数据和本地 mock 生成日报，便于先低成本验证产品体验。配置 `.env.local` 的 `DEEPSEEK_API_KEY` 后，日报生成和小编追问会优先使用 DeepSeek；Qwen 接入保留为后续可选路径。
+没有配置 Supabase / DeepSeek 时，应用会使用内存数据和本地 fallback 生成日报，便于先低成本验证产品体验。配置 `.env.local` 的 `DEEPSEEK_API_KEY` 后，日报生成和小编追问会优先使用 DeepSeek；金融数据层默认使用低成本公开来源，并会把可追溯事件缓存到 Supabase 的 `market_events`。
 
 ## 生成日报
 
@@ -41,10 +41,13 @@ Supabase 暂时后置。需要真实落库或多端同步时，再执行 `supaba
 ```bash
 LLM_PROVIDER=deepseek
 DEEPSEEK_API_KEY=your-key
-DEEPSEEK_MODEL=deepseek-chat
+DEEPSEEK_MODEL=deepseek-v4-flash
+MARKET_DATA_PROVIDER=official
 ```
 
 如果没有配置 DeepSeek，系统会回退到 deterministic mock 文案，不影响本地体验验证。
+
+`MARKET_DATA_PROVIDER=official` 会优先检查交易所/指数公司等公开来源，并将市场概览和自选股观察事件写入 `market_events`。本地离线测试可改为 `MARKET_DATA_PROVIDER=mock`。
 
 ## 安全边界
 

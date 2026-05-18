@@ -1,25 +1,28 @@
 import { getChinaDate } from "@/lib/date";
-import { PublicMockMarketDataProvider, PublicMockNewsProvider } from "@/lib/providers/marketData";
+import { hasDeepSeekConfig } from "@/lib/config";
+import { PublicMockMarketDataProvider, PublicMockNewsProvider, PublicOfficialMarketEventProvider } from "@/lib/providers/marketData";
 import { callLLM } from "@/lib/providers/llm";
 import { containsUnsafeInvestmentAdvice, sanitizeInvestmentLanguage } from "@/lib/safety";
+import { saveMarketEvents } from "@/lib/services/repository";
 import { dailyReportSchema } from "@/lib/validators";
 import type { DailyReport, MarketEvent, WatchlistItem } from "@/lib/types";
 
 const systemPrompt = `你是一个冷静、温柔、克制、说人话的 A 股市场小编。你只整理市场信息、解释新闻、提醒风险、降低焦虑。禁止荐股、买卖建议、预测收益或鼓励频繁交易。`;
 
-export async function extractEvents(watchlist: WatchlistItem[], date = getChinaDate()): Promise<MarketEvent[]> {
-  const marketProvider = new PublicMockMarketDataProvider();
-  const newsProvider = new PublicMockNewsProvider();
-  const [market, stockNews] = await Promise.all([
-    marketProvider.getMarketSnapshot(date),
-    newsProvider.getStockNews(watchlist)
-  ]);
+type GenerationOptions = {
+  warnings?: string[];
+};
+
+export async function extractEvents(watchlist: WatchlistItem[], date = getChinaDate(), options?: GenerationOptions): Promise<MarketEvent[]> {
+  const sourceEvents = await loadSourceEvents(watchlist, date, options);
+  const persistedEvents = await persistMarketEvents(date, sourceEvents, options);
+  const eventsForLLM = persistedEvents.length > 0 ? persistedEvents : sourceEvents;
 
   const llmContent = await callLLM([
     { role: "system", content: systemPrompt },
     {
       role: "user",
-      content: `请把以下市场信息提取为 JSON，键名为 events。市场：${JSON.stringify(market)} 自选股新闻：${JSON.stringify(stockNews)}`
+      content: `请把以下公开来源事件规范化为 JSON，键名为 events。不要新增没有来源的信息。日期：${date}。自选股：${JSON.stringify(watchlist)}。事件：${JSON.stringify(eventsForLLM)}`
     }
   ], { json: true });
 
@@ -31,9 +34,45 @@ export async function extractEvents(watchlist: WatchlistItem[], date = getChinaD
         : [];
       if (events.length > 0) return events;
     } catch {
+      options?.warnings?.push("DeepSeek 事件规范化 JSON 解析失败，已使用公开来源事件。");
       // Fall back to deterministic events below.
     }
   }
+
+  return eventsForLLM;
+}
+
+async function persistMarketEvents(date: string, events: MarketEvent[], options?: GenerationOptions) {
+  try {
+    return await saveMarketEvents(date, events);
+  } catch (error) {
+    options?.warnings?.push(`market_events 入库失败：${error instanceof Error ? error.message : "未知错误"}`);
+    console.warn(error);
+    return [];
+  }
+}
+
+async function loadSourceEvents(watchlist: WatchlistItem[], date: string, options?: GenerationOptions): Promise<MarketEvent[]> {
+  if (process.env.MARKET_DATA_PROVIDER === "mock") {
+    return loadMockEvents(watchlist, date);
+  }
+
+  try {
+    return await new PublicOfficialMarketEventProvider().getEvents(watchlist, date);
+  } catch (error) {
+    options?.warnings?.push(`公开金融数据源不可用，已使用降级事件：${error instanceof Error ? error.message : "未知错误"}`);
+    console.warn(error);
+    return loadMockEvents(watchlist, date);
+  }
+}
+
+async function loadMockEvents(watchlist: WatchlistItem[], date: string): Promise<MarketEvent[]> {
+  const marketProvider = new PublicMockMarketDataProvider();
+  const newsProvider = new PublicMockNewsProvider();
+  const [market, stockNews] = await Promise.all([
+    marketProvider.getMarketSnapshot(date),
+    newsProvider.getStockNews(watchlist)
+  ]);
 
   return [
     {
@@ -61,8 +100,8 @@ export async function extractEvents(watchlist: WatchlistItem[], date = getChinaD
   ];
 }
 
-export async function generateDailyReport(watchlist: WatchlistItem[], date = getChinaDate()): Promise<DailyReport> {
-  const events = await extractEvents(watchlist, date);
+export async function generateDailyReport(watchlist: WatchlistItem[], date = getChinaDate(), options?: GenerationOptions): Promise<DailyReport> {
+  const events = await extractEvents(watchlist, date, options);
   const llmContent = await callLLM([
     { role: "system", content: systemPrompt },
     {
@@ -76,8 +115,11 @@ export async function generateDailyReport(watchlist: WatchlistItem[], date = get
       const parsed = sanitizeReportShape(JSON.parse(llmContent), date);
       return sanitizeReport(parsed);
     } catch {
+      options?.warnings?.push("DeepSeek 日报 JSON 解析失败，已使用降级日报。");
       // Fall back to deterministic report below.
     }
+  } else if (hasDeepSeekConfig()) {
+    options?.warnings?.push("DeepSeek 未返回可用内容，已使用降级日报。");
   }
 
   return sanitizeReport({

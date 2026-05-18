@@ -26,6 +26,12 @@ export type MarketEvent = {
   source_urls: string[];
 };
 
+export type MarketEventRow = MarketEvent & {
+  id: string;
+  event_date: string;
+  created_at: string;
+};
+
 export type DailyReport = {
   date: string;
   market_weather: MarketWeather;

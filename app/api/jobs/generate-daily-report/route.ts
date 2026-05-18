@@ -35,9 +35,10 @@ export async function POST(request: NextRequest) {
 
   try {
     const watchlist = await listWatchlist(userId);
-    const report = await generateDailyReport(watchlist, date);
+    const warnings: string[] = [];
+    const report = await generateDailyReport(watchlist, date, { warnings });
     const row = await saveReport(userId, report);
-    await completeGenerationJob(userId, date);
+    await completeGenerationJob(userId, date, warnings.join(" | ") || undefined);
     return NextResponse.json({ status: "completed", report: row });
   } catch (error) {
     const message = error instanceof Error ? error.message : "日报生成失败。";
