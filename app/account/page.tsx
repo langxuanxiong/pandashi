@@ -1,4 +1,5 @@
-import { ShieldCheck, Sparkles, UserRound } from "lucide-react";
+import Link from "next/link";
+import { LogOut, ShieldCheck, Sparkles, UserRound } from "lucide-react";
 import { DEFAULT_USER_ID, hasDeepSeekConfig, hasSupabaseConfig } from "@/lib/config";
 import { listReports, listWatchlist } from "@/lib/services/repository";
 
@@ -11,6 +12,10 @@ export default async function AccountPage() {
 
   return (
     <>
+      <Link className="back-link exit-link" href="/" aria-label="退出本地体验">
+        <LogOut size={20} />
+      </Link>
+
       <div className="page-title">
         <div>
           <h2>我的</h2>
@@ -70,15 +75,7 @@ export default async function AccountPage() {
       <section className="roadmap-note">
         <h3>后续会放在这里</h3>
         <p>登录、多设备同步、收盘推送、长期记忆、数据导出和通知设置。</p>
-      </section>
-
-      <section className="logout-panel">
-        <form action="/">
-          <button className="btn danger-text" type="submit">
-            退出本地体验
-          </button>
-        </form>
-        <p className="muted">当前还没有接入真实登录，所以退出只会回到日报页，不会清空本地演示数据。</p>
+        <p className="muted">当前未接入真实登录，左上角退出只会回到日报页，不会清空本地演示数据。</p>
       </section>
     </>
   );

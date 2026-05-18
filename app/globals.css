@@ -431,19 +431,8 @@ button:disabled {
   color: var(--soft);
 }
 
-.logout-panel {
-  display: grid;
-  gap: 10px;
-  margin-top: 16px;
-  padding: 18px;
-  border: 1px solid var(--line-soft);
-  border-radius: 8px;
-  background: var(--paper);
-}
-
-.logout-panel form {
-  margin: 0;
-  justify-self: start;
+.exit-link {
+  color: var(--red);
 }
 
 .eyebrow,
@@ -794,7 +783,8 @@ button:disabled {
   border-top: 1px solid var(--line-soft);
 }
 
-.today-record-card {
+.today-record-card,
+.after-close-history {
   display: grid;
   gap: 10px;
   margin-top: 18px;
@@ -811,6 +801,24 @@ button:disabled {
 
 .today-record-card svg {
   color: var(--accent);
+}
+
+.history-list {
+  display: grid;
+  gap: 10px;
+}
+
+.history-card {
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+  border: 1px solid var(--line-soft);
+  border-radius: 8px;
+  background: #171812;
+}
+
+.history-card p {
+  margin: 0;
 }
 
 .disclaimer {

@@ -5,6 +5,7 @@ import { Check, RotateCcw, Save } from "lucide-react";
 
 const moods = ["放松", "一般", "焦虑", "生气", "疲惫"] as const;
 const reminderOptions = ["明天先看事实，不急着判断", "少看盘半小时", "只复盘自选股相关信息", "把噪音留在今天"];
+const historyKey = "panxiaobian-after-close-history";
 
 type AfterCloseRecord = {
   mood: string;
@@ -25,35 +26,36 @@ export function AfterCloseClient({ date }: AfterCloseClientProps) {
     reminder: reminderOptions[0],
     savedAt: ""
   });
+  const [history, setHistory] = useState<Array<{ date: string; record: AfterCloseRecord }>>([]);
   const [status, setStatus] = useState("");
 
   useEffect(() => {
     const raw = window.localStorage.getItem(storageKey);
-    if (!raw) return;
-
-    try {
-      const saved = JSON.parse(raw) as AfterCloseRecord;
-      setRecord({
-        mood: saved.mood ?? "",
-        reflection: saved.reflection ?? "",
-        reminder: saved.reminder ?? reminderOptions[0],
-        savedAt: saved.savedAt ?? ""
-      });
-    } catch {
-      window.localStorage.removeItem(storageKey);
+    if (raw) {
+      try {
+        const saved = normalizeRecord(JSON.parse(raw) as AfterCloseRecord);
+        setRecord(saved);
+      } catch {
+        window.localStorage.removeItem(storageKey);
+      }
     }
+    setHistory(readHistory());
   }, [storageKey]);
 
   function save() {
     const next = { ...record, savedAt: new Date().toISOString() };
     window.localStorage.setItem(storageKey, JSON.stringify(next));
+    writeHistoryDate(date);
     setRecord(next);
+    setHistory(readHistory());
     setStatus("已保存");
   }
 
   function reset() {
     window.localStorage.removeItem(storageKey);
+    removeHistoryDate(date);
     setRecord({ mood: "", reflection: "", reminder: reminderOptions[0], savedAt: "" });
+    setHistory(readHistory());
     setStatus("已重置");
   }
 
@@ -145,6 +147,69 @@ export function AfterCloseClient({ date }: AfterCloseClientProps) {
           {record.reminder || "给明天留一句轻一点的话。"}
         </p>
       </div>
+
+      <div className="after-close-history">
+        <div className="section-heading">
+          <div>
+            <h3>历史记录</h3>
+            <p className="muted">保存在这台浏览器里的收盘以后记录。</p>
+          </div>
+        </div>
+        {history.length === 0 ? <p className="muted">还没有历史记录。保存一次今日记录后，会出现在这里。</p> : null}
+        <div className="history-list">
+          {history.map((item) => (
+            <article className="history-card" key={item.date}>
+              <div className="row-head">
+                <strong>{item.date}</strong>
+                <span className="tag">{item.record.mood || "未记录情绪"}</span>
+              </div>
+              <p>{item.record.reflection || "没有复盘内容。"}</p>
+              <p className="muted">明日提醒：{item.record.reminder || "没有提醒。"}</p>
+            </article>
+          ))}
+        </div>
+      </div>
     </section>
   );
+}
+
+function normalizeRecord(record: AfterCloseRecord): AfterCloseRecord {
+  return {
+    mood: record.mood ?? "",
+    reflection: record.reflection ?? "",
+    reminder: record.reminder ?? reminderOptions[0],
+    savedAt: record.savedAt ?? ""
+  };
+}
+
+function readHistory() {
+  const rawDates = window.localStorage.getItem(historyKey);
+  if (!rawDates) return [];
+
+  try {
+    const dates = (JSON.parse(rawDates) as string[]).filter(Boolean);
+    return dates
+      .map((savedDate) => {
+        const rawRecord = window.localStorage.getItem(`panxiaobian-after-close-${savedDate}`);
+        if (!rawRecord) return null;
+        return { date: savedDate, record: normalizeRecord(JSON.parse(rawRecord) as AfterCloseRecord) };
+      })
+      .filter((item): item is { date: string; record: AfterCloseRecord } => Boolean(item));
+  } catch {
+    window.localStorage.removeItem(historyKey);
+    return [];
+  }
+}
+
+function writeHistoryDate(date: string) {
+  const current = readHistory().map((item) => item.date);
+  const next = [date, ...current.filter((savedDate) => savedDate !== date)];
+  window.localStorage.setItem(historyKey, JSON.stringify(next));
+}
+
+function removeHistoryDate(date: string) {
+  const next = readHistory()
+    .map((item) => item.date)
+    .filter((savedDate) => savedDate !== date);
+  window.localStorage.setItem(historyKey, JSON.stringify(next));
 }
