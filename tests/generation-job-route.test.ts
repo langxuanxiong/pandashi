@@ -20,6 +20,58 @@ describe("daily report generation job route", () => {
     vi.resetModules();
   });
 
+  it("allows manual demo generation without cron secret header", async () => {
+    disableSupabase();
+    vi.stubEnv("CRON_SECRET", "test-cron-secret");
+
+    const { POST } = await import("@/app/api/jobs/generate-daily-report/route");
+    const response = await POST(
+      new NextRequest("http://localhost/api/jobs/generate-daily-report", {
+        method: "POST",
+        body: JSON.stringify({ date: "2026-05-18", source: "manual-demo" })
+      })
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({ status: "completed" });
+    expect((await getGenerationJob(userId, "2026-05-18"))?.status).toBe("completed");
+  });
+
+  it("rejects cron generation without the configured secret", async () => {
+    disableSupabase();
+    vi.stubEnv("CRON_SECRET", "test-cron-secret");
+
+    const { POST } = await import("@/app/api/jobs/generate-daily-report/route");
+    const response = await POST(
+      new NextRequest("http://localhost/api/jobs/generate-daily-report", {
+        method: "POST",
+        body: JSON.stringify({ date: "2026-05-18" })
+      })
+    );
+
+    expect(response.status).toBe(401);
+    await expect(response.json()).resolves.toMatchObject({ error: "Unauthorized" });
+    expect(await getGenerationJob(userId, "2026-05-18")).toBeNull();
+  });
+
+  it("allows cron generation with the configured secret", async () => {
+    disableSupabase();
+    vi.stubEnv("CRON_SECRET", "test-cron-secret");
+
+    const { POST } = await import("@/app/api/jobs/generate-daily-report/route");
+    const response = await POST(
+      new NextRequest("http://localhost/api/jobs/generate-daily-report", {
+        method: "POST",
+        headers: { "x-cron-secret": "test-cron-secret" },
+        body: JSON.stringify({ date: "2026-05-18" })
+      })
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({ status: "completed" });
+    expect((await getGenerationJob(userId, "2026-05-18"))?.status).toBe("completed");
+  });
+
   it("skips when a report already exists", async () => {
     disableSupabase();
     await saveReport(userId, {

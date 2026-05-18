@@ -13,15 +13,16 @@ import {
 import { generateDailyReportSchema, zodErrorMessage } from "@/lib/validators";
 
 export async function POST(request: NextRequest) {
-  const secret = process.env.CRON_SECRET;
-  const providedSecret = request.headers.get("x-cron-secret");
-  if (secret && secret !== "change-me" && providedSecret !== secret) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
   const body = await request.json().catch(() => ({}));
   const parsedBody = generateDailyReportSchema.safeParse(body);
   if (!parsedBody.success) return NextResponse.json({ error: zodErrorMessage(parsedBody.error) }, { status: 400 });
+
+  const secret = process.env.CRON_SECRET;
+  const providedSecret = request.headers.get("x-cron-secret");
+  const isManualDemo = parsedBody.data.source === "manual-demo";
+  if (!isManualDemo && secret && secret !== "change-me" && providedSecret !== secret) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
   const userId = parsedBody.data.userId ?? DEFAULT_USER_ID;
   const date = parsedBody.data.date ?? getChinaDate();
