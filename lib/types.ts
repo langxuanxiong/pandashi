@@ -54,9 +54,31 @@ export type DailyReportRow = {
   created_at: string;
 };
 
+export type ChatMessageRow = {
+  id: string;
+  user_id: string;
+  role: "user" | "assistant";
+  content: string;
+  related_report_id?: string | null;
+  created_at: string;
+};
+
+export type GenerationJobStatus = "pending" | "running" | "completed" | "failed";
+
+export type GenerationJobRow = {
+  id: string;
+  user_id: string;
+  job_date: string;
+  status: GenerationJobStatus;
+  error_message?: string | null;
+  retry_count: number;
+  started_at?: string | null;
+  finished_at?: string | null;
+  created_at: string;
+};
+
 export type TodayReportResponse =
   | { status: "completed"; report: DailyReportRow }
   | { status: "pending"; message: string; latestReport?: DailyReportRow }
   | { status: "failed"; message: string; latestReport?: DailyReportRow }
   | { status: "non_trading_day"; message: string; latestReport?: DailyReportRow };
-

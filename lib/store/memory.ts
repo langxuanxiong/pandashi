@@ -1,11 +1,12 @@
 import { DEFAULT_USER_ID } from "@/lib/config";
 import { getChinaDate } from "@/lib/date";
-import type { DailyReport, DailyReportRow, WatchlistItem } from "@/lib/types";
+import type { ChatMessageRow, DailyReport, DailyReportRow, GenerationJobRow, WatchlistItem } from "@/lib/types";
 
 type MemoryState = {
   watchlist: WatchlistItem[];
   reports: DailyReportRow[];
-  chats: Array<{ id: string; user_id: string; role: string; content: string; related_report_id?: string; created_at: string }>;
+  chats: ChatMessageRow[];
+  generationJobs: GenerationJobRow[];
 };
 
 const globalStore = globalThis as typeof globalThis & { __pandashiMemory?: MemoryState };
@@ -35,7 +36,8 @@ export function memoryStore() {
         }
       ],
       reports: [],
-      chats: []
+      chats: [],
+      generationJobs: []
     };
   }
 
@@ -53,3 +55,6 @@ export function createReportRow(userId: string, report: DailyReport): DailyRepor
   };
 }
 
+export function resetMemoryStore() {
+  delete globalStore.__pandashiMemory;
+}

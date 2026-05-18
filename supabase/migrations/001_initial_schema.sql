@@ -18,6 +18,9 @@ create table if not exists watchlist_items (
   unique(user_id, code)
 );
 
+create index if not exists watchlist_items_user_created_idx
+  on watchlist_items (user_id, created_at);
+
 create table if not exists daily_reports (
   id uuid primary key default gen_random_uuid(),
   user_id uuid references users(id) on delete cascade,
@@ -28,6 +31,9 @@ create table if not exists daily_reports (
   created_at timestamp with time zone default now(),
   unique(user_id, report_date)
 );
+
+create index if not exists daily_reports_user_date_idx
+  on daily_reports (user_id, report_date desc);
 
 create table if not exists market_events (
   id uuid primary key default gen_random_uuid(),
@@ -52,6 +58,12 @@ create table if not exists chat_messages (
   created_at timestamp with time zone default now()
 );
 
+create index if not exists chat_messages_user_created_idx
+  on chat_messages (user_id, created_at desc);
+
+create index if not exists chat_messages_related_report_idx
+  on chat_messages (related_report_id);
+
 create table if not exists generation_jobs (
   id uuid primary key default gen_random_uuid(),
   user_id uuid references users(id) on delete cascade,
@@ -64,6 +76,12 @@ create table if not exists generation_jobs (
   created_at timestamp with time zone default now(),
   unique(user_id, job_date)
 );
+
+create index if not exists generation_jobs_user_date_idx
+  on generation_jobs (user_id, job_date desc);
+
+create index if not exists generation_jobs_status_idx
+  on generation_jobs (status);
 
 insert into users (id, nickname)
 values ('00000000-0000-0000-0000-000000000001', '默认用户')
